@@ -1,6 +1,7 @@
 version: '3.8'
 
 services:
+  # PostgreSQL Database
   postgres:
     image: postgres:15
     container_name: godlevel-db
@@ -18,7 +19,52 @@ services:
       interval: 5s
       timeout: 5s
       retries: 5
+    networks:
+      - godlevel-network
 
+  # Backend API (FastAPI)
+  backend:
+    build:
+      context: ./backend
+      dockerfile: Dockerfile
+    container_name: godlevel-backend
+    environment:
+      DB_HOST: postgres
+      DB_PORT: 5432
+      DB_NAME: challenge_db
+      DB_USER: challenge
+      DB_PASSWORD: challenge_2024
+    ports:
+      - "8000:8000"
+    depends_on:
+      postgres:
+        condition: service_healthy
+    volumes:
+      - ./backend:/app
+    command: uvicorn main:app --host 0.0.0.0 --port 8000 --reload
+    networks:
+      - godlevel-network
+
+  # Frontend (Next.js)
+  frontend:
+    build:
+      context: ./frontend
+      dockerfile: Dockerfile
+    container_name: godlevel-frontend
+    environment:
+      NEXT_PUBLIC_API_URL: http://localhost:8000
+    ports:
+      - "3000:3000"
+    depends_on:
+      - backend
+    volumes:
+      - ./frontend:/app
+      - /app/node_modules
+      - /app/.next
+    networks:
+      - godlevel-network
+
+  # Data Generator (run once)
   data-generator:
     build:
       context: .
@@ -36,9 +82,12 @@ services:
         echo 'Generating challenge data...' &&
         python generate_data.py --db-url postgresql://challenge:challenge_2024@postgres:5432/challenge_db
       "
+    networks:
+      - godlevel-network
     profiles:
       - tools
 
+  # pgAdmin (optional)
   pgadmin:
     image: dpage/pgadmin4:latest
     container_name: godlevel-pgadmin
@@ -50,10 +99,15 @@ services:
       - "5050:80"
     depends_on:
       - postgres
+    networks:
+      - godlevel-network
     profiles:
       - tools
+
+networks:
+  godlevel-network:
+    driver: bridge
 
 volumes:
   postgres_data:
     driver: local
-
