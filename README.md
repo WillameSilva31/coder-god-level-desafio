@@ -72,8 +72,8 @@ Sistema completo de Business Intelligence para restaurantes, permitindo que dono
 ### Instalação (5 minutos)
 ```bash
 # 1. Clone o repositório
-git clone https://github.com/seu-usuario/nola-god-level.git
-cd nola-god-level
+git clone https://github.com/WillameSilva31/coder-god-level-desafio.git
+cd coder-god-level-desafio
 
 # 2. Inicie o PostgreSQL
 docker compose up -d postgres
